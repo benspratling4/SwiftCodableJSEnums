@@ -3,46 +3,62 @@ import SwiftDecodableJSEnumsLib
 
 let arguments = ProcessInfo.processInfo.arguments
 guard arguments.count >= 4 else {
-	fatalError("arguments.count = \(arguments.count), should be at least 5")
+	fatalError("arguments.count = \(arguments.count), should be at least 4")
 }
-
 
 let mainEnumTypeFilePath = arguments[1]
 let typeEnumTypeFilePath = arguments[2]
 let outputFilePath = arguments[3]
-//let extensionFilePath = arguments[4]	//TODO: get type property name and is public, maybe send path to .swiftJSEnum file?
+let extensionFilePath = arguments[4]
 
 
+//read main type
 let mainUrl = URL(fileURLWithPath: mainEnumTypeFilePath)
-let originalEnum = mainUrl.deletingPathExtension().lastPathComponent
+guard let mainData = try? Data(contentsOf:mainUrl) else {
+	fatalError("unable to read file \(mainUrl.path)")
+}
+guard let mainString = String(data:mainData, encoding:.utf8) else {
+	fatalError("unable to interpret main source code file as UTF-8 string")
+}
+guard let mainDef = MainEnumParser(mainFile: mainString).mainEnumDefinition else {
+	fatalError("Unable to read main enum definition")
+}
 
+//read type type
 let typeUrl = URL(fileURLWithPath: typeEnumTypeFilePath)
-let typeEnum = typeUrl.deletingPathExtension().lastPathComponent
+guard let typeData = try? Data(contentsOf:typeUrl) else {
+	fatalError("unable to read file \(typeUrl.path)")
+}
+guard let typeString = String(data:typeData, encoding:.utf8) else {
+	fatalError("unable to interpret type source code file as UTF-8 string")
+}
+guard let typeDef = TypeEnumParser(typeFile: typeString).typeEnumDefinition else {
+	fatalError("unable to remain type enum definition")
+}
 
-//TODO: fix type property name and isPublic to be correct
-//TODO: support arbitrary imports
-let spec = EnumSpec(enumName: originalEnum, typePropertyName: "type", typeTypeName: typeEnum, isPublic: false)
+//read type property extension file
+let extensionUrl = URL(fileURLWithPath: extensionFilePath)
+guard let extensionData = try? Data(contentsOf:extensionUrl) else {
+	fatalError("unable to read file \(extensionUrl.path)")
+}
+guard let extensionString = String(data:extensionData, encoding:.utf8) else {
+	fatalError("unable to interpret extension source code file as UTF-8 string")
+}
+let extensionDef = EnumTypesFile(fileContents: extensionString)
+guard let typePropertyName = extensionDef.enums.filter({ $0.enumName == mainDef.mainName }).first?.typePropertyName else {
+	fatalError("unable to find extension for main enum")
+}
 
-//this is a static sample to test output incrementally
-let outputFile = DefaultDecodableJSCreator(EnumDecoderSpec(imports: []
-														   , mainTypeName: "Transaction"
-														   , mainTypeIsPublic: false	//TODO: fix me
-														   , typePropertyName: "type"
-														   , typeTypeName: "TransactionType"
-														   ,typeTypeIsPublic:false	//TODO: fix me
-														   , cases: [
-															CaseSpec(name: "add", associatedValueName: "NewTransaction"),
-															CaseSpec(name: "update", associatedValueName: "TransactionChange"),
-															CaseSpec(name: "delete", associatedValueName: "TransactionDeletion"),
-														   ]))
+//create the output file
+let outputFile = DefaultDecodableJSCreator(
+	EnumDecoderSpec(imports: extensionDef.imports
+		,mainTypeName: mainDef.mainName
+		,mainTypeIsPublic: mainDef.isPublic
+		,typePropertyName: typePropertyName
+		,typeTypeName: typeDef.mainName
+		,typeTypeIsPublic:typeDef.isPublic
+		,cases: mainDef.cases))
 	.outputFile
 	.data(using: .utf8)!
 
 try outputFile.write(to: URL(fileURLWithPath: outputFilePath))
-
-/*
-try XCAssetAnalyzer(urlToXCAsset: URL(fileURLWithPath: inputFilePath)
-					, context: isXcodeProject ? .xcodeProject : .swiftPackage)
-	.fileContents()
-	.write(to: URL(fileURLWithPath: outputFilePath))
-*/

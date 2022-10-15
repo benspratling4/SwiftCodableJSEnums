@@ -8,3 +8,4 @@
 import Foundation
 
 extension Transaction { var type:TransactionType }
+

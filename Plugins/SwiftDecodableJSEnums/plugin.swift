@@ -7,8 +7,7 @@
 
 import Foundation
 import PackagePlugin
-//import SwiftDecodableJSEnumsLib
-
+//importing SwiftDecodableJSEnums fails...  why???
 
 @main
 struct SwiftXCAssetConstants: BuildToolPlugin {
@@ -16,14 +15,14 @@ struct SwiftXCAssetConstants: BuildToolPlugin {
 	func createBuildCommands(context: PackagePlugin.PluginContext, target: PackagePlugin.Target) async throws -> [PackagePlugin.Command] {
 		guard let target = target as? SourceModuleTarget else { return [] }
 		let files = target.sourceFiles(withSuffix: "swiftJSEnum")
-		print("relevant files \(files)")
-		let enumSpecs = files
-			.compactMap({ try? Data(contentsOf:URL(fileURLWithPath: $0.path.string) ) })
-			.compactMap({ String(data:$0, encoding:.utf8) })
-			.compactMap({ EnumTypesFile(fileContents: $0) })
+		let enumSpecs:[EnumSpec] = files
+			.compactMap({ file -> EnumTypesFile? in
+				guard let data = try? Data(contentsOf:URL(fileURLWithPath: file.path.string))
+					,let string = String(data:data, encoding:.utf8)
+					else { return nil }
+				return EnumTypesFile(path: file.path.string, fileContents: string)
+			})
 			.flatMap({ $0.enums })
-		
-		print("found \(enumSpecs)")
 		return try enumSpecs.map { enumSpec in
 			//look for the source files
 			guard let mainFile = target.sourceFiles.filter({ $0.path.lastComponent == enumSpec.enumName + ".swift" }).first else { throw GenericError.error }
@@ -31,58 +30,25 @@ struct SwiftXCAssetConstants: BuildToolPlugin {
 			let base = mainFile.path.stem
 			let appDir = context.pluginWorkDirectory.appending(target.moduleName)
 			let output = appDir.appending(base + "+JSTypeDecodable.swift")
-			//output file
 			return .buildCommand(displayName: "Synthesize JS-compatible init(from:Decoder) method for \(base)"
 								 ,executable: try context.tool(named: "SwiftDecodableJSEnumsExec").path
-								 ,arguments:[mainFile.path.string, typeFile.path.string, output.string]
+								 ,arguments:[mainFile.path.string, typeFile.path.string, output.string, enumSpec.path]
 								 ,inputFiles: [mainFile.path, typeFile.path]
 								 ,outputFiles: [output])
 		}
-		
-		
-		
-		
-		//now look for those files
-		
-//		return []
-		
-		//TODO: write me
-		
-//		fatalError("write me")
-		
-		/*
-		return try target
-			.sourceFiles(withSuffix: "xcassets")
-			.enumerated()
-			.map({ (offset, xsd) in
-				let base = xsd.path.stem
-				let input = xsd.path
-				let appDir = context.pluginWorkDirectory.appending(target.moduleName)
-				let output = appDir.appending("\(base)_ui_constants.swift")
-//				print("working dir \(appDir)")
-//				return .prebuildCommand(displayName: "Create UIColor and UIImage constants from \(base).xcassets"
-//										, executable: try context.tool(named: "SwiftXCAssetConstantsExec").path
-//										, arguments: [input.string, output.string]
-//										, outputFilesDirectory: appDir)
-
-				return .buildCommand(displayName: "Create UIColor and UIImage constants from \(base).xcassets"
-									 ,executable: try context.tool(named: "SwiftXCAssetConstantsExec").path
-									 ,arguments:[input.string, output.string]
-									 ,inputFiles: [input]
-									 ,outputFiles: [output])
-			})
-		 */
 	}
 }
 
 
 public struct EnumSpec {
+	public var path:String
 	public var enumName:String
 	public var typePropertyName:String
 	public var typeTypeName:String
 	public var isPublic:Bool = false
 	
-	public init(enumName: String, typePropertyName: String, typeTypeName: String, isPublic: Bool) {
+	public init(path:String, enumName: String, typePropertyName: String, typeTypeName: String, isPublic: Bool) {
+		self.path = path
 		self.enumName = enumName
 		self.typePropertyName = typePropertyName
 		self.typeTypeName = typeTypeName
@@ -94,15 +60,18 @@ public struct EnumSpec {
 
 
 public struct EnumTypesFile {
+	public var path:String
 	public var imports:[String] = []
 	public var enums:[EnumSpec] = []
 	
-	public init(imports: [String], enums: [EnumSpec]) {
+	public init(path:String, imports: [String], enums: [EnumSpec]) {
+		self.path = path
 		self.imports = imports
 		self.enums = enums
 	}
 	
-	public init(fileContents:String) {
+	public init(path:String, fileContents:String) {
+		self.path = path
 		//find imports - we may need these
 		self.imports = fileContents
 			.regExMatches(#"(^|\n|;[\s]+)import[\s]+.+(\n|$)"#)
@@ -111,7 +80,7 @@ public struct EnumTypesFile {
 		//find extensions
 		self.enums = fileContents
 			.regExMatches(#"extension[\s]+[\S]+[\s]*\{[\s]*var[\s]+[\S]+[\s]*:[\s]*[\S]+[\s]*\}"#)
-			.compactMap({ $0.valueOfSwiftEnumExtension() })
+			.compactMap({ $0.valueOfSwiftEnumExtension(path:path) })
 	}
 	
 }
@@ -160,12 +129,12 @@ extension String {
 		return componentsInBetweenRegExes([#"import[\s]+"#, #"(\n|$)"#])?.first
 	}
 	
-	fileprivate func valueOfSwiftEnumExtension()->EnumSpec? {
+	fileprivate func valueOfSwiftEnumExtension(path:String)->EnumSpec? {
 		guard let components = self.componentsInBetweenRegExes([#"extension[\s]+"#, #"[\s]*\{[\s]*var[\s]+"#, #"[\s]*:[\s]*"#, #"[\s]*\}"#])
 			,components.count == 3
 			else { return nil }
 		//TODO: read publicness
-		return EnumSpec(enumName: components[0], typePropertyName: components[1], typeTypeName: components[2], isPublic: false)
+		return EnumSpec(path:path,enumName: components[0], typePropertyName: components[1], typeTypeName: components[2], isPublic: false)
 	}
 	
 	

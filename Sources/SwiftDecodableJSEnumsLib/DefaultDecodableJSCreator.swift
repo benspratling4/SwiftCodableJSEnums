@@ -57,7 +57,12 @@ public struct DefaultDecodableJSCreator {
 		finalOutput += "\n\tprivate struct JSDecodableTypeContainer : Decodable {\n\t\tvar type:"
 		+ spec.typeTypeName
 		+ "\n\t}\n\n"
-		+ "\tinit(from decoder:Decoder)throws {\n\t\tlet typer = try decoder.singleValueContainer().decode(JSDecodableTypeContainer.self)\n\t\tswitch typer.type {\n"
+		+ "\t"
+		if spec.mainTypeIsPublic {
+			finalOutput += "public "
+		}
+		
+		finalOutput += "init(from decoder:Decoder)throws {\n\t\tlet typer = try decoder.singleValueContainer().decode(JSDecodableTypeContainer.self)\n\t\tswitch typer.type {\n"
 		
 		for caseSpec in spec.cases {
 			finalOutput += "\t\t\tcase ." + caseSpec.name + ":\n\t\t\t\tself = ." + caseSpec.name + "(try decoder.singleValueContainer().decode(" + caseSpec.associatedValueName + ".self))\n"
@@ -65,53 +70,20 @@ public struct DefaultDecodableJSCreator {
 		
 		finalOutput += "\t\t}\n\t}\n\n"
 		
-		finalOutput += "\tvar " + spec.typePropertyName + ":" + spec.typeTypeName + " {\n\t\tswitch self {\n"
+		finalOutput += "\t"
+		if spec.mainTypeIsPublic, spec.typeTypeIsPublic {
+			finalOutput += "public "
+		}
+		
+		finalOutput += "var " + spec.typePropertyName + ":" + spec.typeTypeName + " {\n\t\tswitch self {\n"
 		
 		for caseSpec in spec.cases {
 			finalOutput += "\t\t\tcase ." + caseSpec.name + "(_):\n\t\t\t\treturn." + caseSpec.name + "\n"
 		}
 		
 		finalOutput += "\t\t}\n\t}"
-		
 		finalOutput += "\n}"
-		
 		return finalOutput
-		
-		
-//		return """
-//import Foundation
-//
-//extension Transaction {
-//	private struct JSDecodableTypeContainer : Decodable {
-//		var type:TransactionType
-//	}
-//
-//	init(from decoder:Decoder)throws {
-//		let typer = try decoder.singleValueContainer().decode(JSDecodableTypeContainer.self)
-//		switch typer.type {
-//		case .add:
-//			self = .add(try decoder.singleValueContainer().decode(NewTransaction.self))
-//		case .update:
-//			self = .update(try decoder.singleValueContainer().decode(TransactionChange.self))
-//		case .delete:
-//			self = .delete(try decoder.singleValueContainer().decode(TransactionDeletion.self))
-//		}
-//	}
-//
-//	var type:TransactionType {
-//		switch self {
-//			case .add(_):
-//				return .add
-//			case .update(_):
-//				return .update
-//			case .delete(_):
-//				return .delete
-//		}
-//	}
-//
-//}
-//
-//"""
 	}
 	
 	var spec:EnumDecoderSpec

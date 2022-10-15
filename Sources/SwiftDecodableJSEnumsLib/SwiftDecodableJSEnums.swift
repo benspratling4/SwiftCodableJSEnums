@@ -1,30 +1,10 @@
 import Foundation
 
-public struct EnumSpec {
-	public var enumName:String
-	public var typePropertyName:String
-	public var typeTypeName:String
-	public var isPublic:Bool = false
-	
-	public init(enumName: String, typePropertyName: String, typeTypeName: String, isPublic: Bool) {
-		self.enumName = enumName
-		self.typePropertyName = typePropertyName
-		self.typeTypeName = typeTypeName
-		self.isPublic = isPublic
-	}
-	
-}
 
-
+///init one of these to read the .swiftJSenum file containing the carefull crafted type-property extensions on your enums with associated values.
 public struct EnumTypesFile {
-	public var imports:[String] = []
-	public var enums:[EnumSpec] = []
 	
-	public init(imports: [String], enums: [EnumSpec]) {
-		self.imports = imports
-		self.enums = enums
-	}
-	
+	///init one of these
 	public init(fileContents:String) {
 		//find imports - we may need these
 		self.imports = fileContents
@@ -37,8 +17,31 @@ public struct EnumTypesFile {
 			.compactMap({ $0.valueOfSwiftEnumExtension() })
 	}
 	
+	//use these properties
+	public var imports:[String] = []
+	public var enums:[EnumSpec] = []
+	
+	public init(imports: [String], enums: [EnumSpec]) {
+		self.imports = imports
+		self.enums = enums
+	}
+	
 }
 
+
+public struct EnumSpec {
+	public var enumName:String
+	public var typePropertyName:String
+	public var typeTypeName:String
+	public var isPublic:Bool = false
+	
+	public init(enumName: String, typePropertyName: String, typeTypeName: String, isPublic: Bool) {
+		self.enumName = enumName
+		self.typePropertyName = typePropertyName
+		self.typeTypeName = typeTypeName
+		self.isPublic = isPublic
+	}
+}
 
 extension String {
 	func rangesOfRegExMatches(_ regex:String)->[Range<String.Index>] {
@@ -90,6 +93,5 @@ extension String {
 		//TODO: read publicness
 		return EnumSpec(enumName: components[0], typePropertyName: components[1], typeTypeName: components[2], isPublic: false)
 	}
-	
 	
 }

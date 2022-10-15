@@ -10,9 +10,8 @@ import XCTest
 @testable import ExampleProject
 
 
+
 class DecodeTransactionTests : XCTestCase {
-	
-	
 	
 	func testDecoding()throws {
 		let json:Data = """
@@ -24,11 +23,22 @@ class DecodeTransactionTests : XCTestCase {
 """.data(using: .utf8)!
 		
 		let values = try JSONDecoder().decode([Transaction].self, from: json)
+		
 		XCTAssertEqual(values.count, 3)
 		
+		guard case .add(let payload) = values[0] else {
+			XCTFail("first value was not add")
+			return
+		}
+		XCTAssertEqual(payload.name, "New Transation 0")
 		
+		guard case .update(let payload1) = values[1] else {
+			XCTFail("second value was not an update")
+			return
+		}
+		XCTAssertEqual(payload1.id, "0")
+		XCTAssertEqual(payload1.name, "Changed Transaction Name")
 		
 	}
-	
 	
 }
