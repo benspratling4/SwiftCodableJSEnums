@@ -1,0 +1,10 @@
+//
+//  File.swift
+//  
+//
+//  Created by Benjamin Spratling on 10/15/22.
+//
+
+import Foundation
+
+extension Transaction { var type:TransactionType }
