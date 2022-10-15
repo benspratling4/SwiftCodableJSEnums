@@ -4,7 +4,7 @@ Synthesize `init(from decoder:Decoder)throws` methods to support JavaScript-styl
 
 ## Abstract
 
-Swift's compiler-synthesized Decodable conformance for enums generates data structures which don't precisely match what JavaScript has been doing since before people learned how to properly structure data models.
+Swift's compiler-synthesized Decodable conformance for enums generates data structures which don't precisely match what JavaScript has been doing since before people learned how to properly structure data models.  This package plugin build tool creates ones which do.
 
 
 ## The problem this package plugin build tool solves
@@ -155,5 +155,6 @@ Add this build tool to your target like you would any other package plugin.  And
 
 ### Voila!
 
-No seriously, you're done.  The build tool auto generates appropriate `init(from decoder:Decoder)throws` methods for you.  It gets the `public` right, and it gets the imports right. 
+Now you can JSONDecoder() like a normal person.  The build tool synthesizes a .swift file which includes a `init(from decoder:Decoder)throws` method for you which understands the JavaScript-style data models.  It gets the `public` right, and it uses the imports from your .swiftJSEnum file so you can name-space appropriately.  It also actually creates the `var type` property you made the fake extension for, so you can read that property, as if you needed to.
 
+Want to ignore unknown values for your type property when deserializing an array?  Check out https://github.com/benspratling4/SwiftPatterns/blob/master/Sources/SwiftPatterns/SkippingDecodeErrors.swift .  
