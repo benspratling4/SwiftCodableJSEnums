@@ -7,7 +7,7 @@
 
 import Foundation
 import PackagePlugin
-//importing SwiftDecodableJSEnums fails...  why???
+//importing SwiftCodableJSEnums fails...  why???
 
 @main
 struct SwiftXCAssetConstants: BuildToolPlugin {
@@ -29,9 +29,9 @@ struct SwiftXCAssetConstants: BuildToolPlugin {
 			guard let typeFile = target.sourceFiles.filter({ $0.path.lastComponent == enumSpec.typeTypeName + ".swift" }).first else { throw GenericError.error }
 			let base = mainFile.path.stem
 			let appDir = context.pluginWorkDirectory.appending(target.moduleName)
-			let output = appDir.appending(base + "+JSTypeDecodable.swift")
-			return .buildCommand(displayName: "Synthesize JS-compatible init(from:Decoder) method for \(base)"
-								 ,executable: try context.tool(named: "SwiftDecodableJSEnumsExec").path
+			let output = appDir.appending(base + "+JSTypeCodable.swift")
+			return .buildCommand(displayName: "Synthesize JS-compatible Codable conformances for \(base)"
+								 ,executable: try context.tool(named: "SwiftCodableJSEnumsExec").path
 								 ,arguments:[mainFile.path.string, typeFile.path.string, output.string, enumSpec.path]
 								 ,inputFiles: [mainFile.path, typeFile.path]
 								 ,outputFiles: [output])
@@ -133,7 +133,7 @@ extension String {
 		guard let components = self.componentsInBetweenRegExes([#"extension[\s]+"#, #"[\s]*\{[\s]*var[\s]+"#, #"[\s]*:[\s]*"#, #"[\s]*\}"#])
 			,components.count == 3
 			else { return nil }
-		//TODO: read publicness
+		
 		return EnumSpec(path:path,enumName: components[0], typePropertyName: components[1], typeTypeName: components[2], isPublic: false)
 	}
 	

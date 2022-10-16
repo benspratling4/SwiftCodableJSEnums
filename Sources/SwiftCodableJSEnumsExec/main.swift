@@ -1,5 +1,5 @@
 import Foundation
-import SwiftDecodableJSEnumsLib
+import SwiftCodableJSEnumsLib
 
 let arguments = ProcessInfo.processInfo.arguments
 guard arguments.count >= 4 else {
@@ -49,15 +49,21 @@ guard let typePropertyName = extensionDef.enums.filter({ $0.enumName == mainDef.
 	fatalError("unable to find extension for main enum")
 }
 
+let shouldDecode = mainDef.decodable && typeDef.decodable
+let shouldEncode = mainDef.encodable && typeDef.encodable
 //create the output file
-let outputFile = DefaultDecodableJSCreator(
-	EnumDecoderSpec(imports: extensionDef.imports
+let outputFile = DefaultCodableJSCreator(
+	EnumCoderSpec(imports: extensionDef.imports
 		,mainTypeName: mainDef.mainName
 		,mainTypeIsPublic: mainDef.isPublic
 		,typePropertyName: typePropertyName
 		,typeTypeName: typeDef.mainName
 		,typeTypeIsPublic:typeDef.isPublic
-		,cases: mainDef.cases))
+		,cases: mainDef.cases
+		,createDecode:shouldDecode
+		,createEncode:shouldEncode
+	)
+)
 	.outputFile
 	.data(using: .utf8)!
 

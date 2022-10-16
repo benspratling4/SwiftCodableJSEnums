@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TransactionType : String, Decodable {
+enum TransactionType : String, Decodable, Encodable {
 	case add = "create"
 	case update
 	case delete

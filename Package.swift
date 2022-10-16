@@ -5,28 +5,25 @@ import Foundation
 import PackageDescription
 
 let package = Package(
-    name: "SwiftDecodableJSEnums",
-	platforms: [
-		.macOS(.v12),
-	],
+    name: "SwiftCodableJSEnums",
     products: [
-		.plugin(name: "SwiftDecodableJSEnums", targets: ["SwiftDecodableJSEnums"])
+		.plugin(name: "SwiftCodableJSEnums", targets: ["SwiftCodableJSEnums"])
     ],
     dependencies: [
 		.package(url: "https://github.com/apple/swift-syntax.git", exact: "0.50700.1"),
     ],
     targets: [
 		//The main product of this pakage, a plugin which creates alternate default decodable implementations
-		.plugin(name: "SwiftDecodableJSEnums"
+		.plugin(name: "SwiftCodableJSEnums"
 				, capability: .buildTool()
 				, dependencies: [
-			.target(name: "SwiftDecodableJSEnumsExec"),
+			.target(name: "SwiftCodableJSEnumsExec"),
 		]),
 		
 		//an example of how you would call this plug-in for an project
 		.target(name: "ExampleProject"
 				, plugins: [
-					"SwiftDecodableJSEnums",
+					"SwiftCodableJSEnums",
 				]
 		),
 		
@@ -38,7 +35,7 @@ let package = Package(
 		
 		//an underlying library which does the manipulation
 		.target(
-			name: "SwiftDecodableJSEnumsLib"
+			name: "SwiftCodableJSEnumsLib"
 			,dependencies: [
 				.product(name: "SwiftSyntax", package: "swift-syntax"),
 				.product(name: "SwiftSyntaxParser", package: "swift-syntax"),
@@ -46,9 +43,9 @@ let package = Package(
 		),
 		
 		//en executable, required for plugins, which wraps calls to the library
-		.executableTarget(name: "SwiftDecodableJSEnumsExec"
+		.executableTarget(name: "SwiftCodableJSEnumsExec"
 				, dependencies: [
-					.target(name: "SwiftDecodableJSEnumsLib"),
+					.target(name: "SwiftCodableJSEnumsLib"),
 					.product(name: "SwiftSyntax", package: "swift-syntax"),
 					.product(name: "SwiftSyntaxParser", package: "swift-syntax"),
 				]
@@ -59,9 +56,9 @@ let package = Package(
 						 ),
 		
 		//Unit Tests for the library
-		.testTarget(name: "SwiftDecodableJSEnumsLibTests"
+		.testTarget(name: "SwiftCodableJSEnumsLibTests"
 					, dependencies: [
-			.target(name: "SwiftDecodableJSEnumsLib")
+			.target(name: "SwiftCodableJSEnumsLib")
 		]),
     ]
 )

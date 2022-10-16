@@ -8,15 +8,15 @@
 import Foundation
 
 
-struct NewTransaction : Decodable {
+struct NewTransaction : Decodable, Encodable {
 	var name:String
 }
 
-struct TransactionChange : Decodable {
+struct TransactionChange : Decodable, Encodable {
 	var id:String
 	var name:String
 }
 
-struct TransactionDeletion : Decodable {
+struct TransactionDeletion : Decodable, Encodable {
 	var id:String
 }

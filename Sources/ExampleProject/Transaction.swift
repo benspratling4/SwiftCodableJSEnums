@@ -8,7 +8,7 @@
 import Foundation
 
 
-enum Transaction : Decodable {
+enum Transaction : Decodable, Encodable {
 	case add(NewTransaction)
 	case update(TransactionChange)
 	case delete(TransactionDeletion)

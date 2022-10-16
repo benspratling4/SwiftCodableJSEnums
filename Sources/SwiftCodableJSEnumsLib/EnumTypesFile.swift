@@ -1,7 +1,7 @@
 import Foundation
 
 
-///init one of these to read the .swiftJSenum file containing the carefull crafted type-property extensions on your enums with associated values.
+///init one of these to read the .swiftJSEnum file containing the carefully crafted type-property extensions on your enums with associated values.
 public struct EnumTypesFile {
 	
 	///init one of these

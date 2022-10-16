@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import SwiftDecodableJSEnumsLib
+import SwiftCodableJSEnumsLib
 
 final class EnumTypesFileTests: XCTestCase {
 
