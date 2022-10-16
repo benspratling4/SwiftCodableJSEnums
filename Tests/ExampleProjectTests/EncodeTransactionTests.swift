@@ -15,7 +15,7 @@ final class EncodeTransactionTests: XCTestCase {
 		let values:[Transaction] = [
 			.add(NewTransaction(name: "New Transaction 0")),
 			.update(TransactionChange(id: "0", name: "Changed Transaction Name")),
-			.delete(TransactionDeletion(id: "0"))
+			.delete(id: "0")
 		]
 		
 		let encoder = JSONEncoder()

@@ -44,10 +44,28 @@ public class MainEnumParser : SyntaxVisitor {
 	open override func visitPost(_ node: EnumCaseDeclSyntax) {
 		super.visitPost(node)
 		for element in node.elements {
-			guard let firstParameter = element.associatedValue?.parameterList.first else {
+			guard let parameterList = element.associatedValue?.parameterList else { continue }
+			if parameterList.count == 0 {
+				//fail for now, maybe support this one day?
 				continue
 			}
-			cases.append(CaseSpec(name: element.identifier.description, associatedValueName: firstParameter.description))
+			else if parameterList.count == 1		//if there is one argument, and it is not labeled, we wrap everything up into a subtype
+				,let firstParameter = parameterList.first
+				,firstParameter.firstName == nil
+				,let parameterType = firstParameter.type {
+				cases.append(CaseSpec(name: element.identifier.description
+									  ,associatedValueName: parameterType.withoutTrivia().description))
+			}
+			else {
+				//unless we have a single unnamed argument, all must be labeled
+				guard parameterList.filter({ $0.firstName == nil }).count == 0 else {
+					continue
+				}
+				cases.append(CaseSpec(name: element.identifier.description
+									  ,values: .multipleNamed(
+										parameterList.map({ .init(label: $0.firstName!.withoutTrivia().text, typeName: $0.type!.withoutTrivia().description) })
+									  )))
+			}
 		}
 	}
 	

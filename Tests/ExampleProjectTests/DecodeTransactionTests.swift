@@ -32,12 +32,18 @@ class DecodeTransactionTests : XCTestCase {
 		}
 		XCTAssertEqual(payload.name, "New Transation 0")
 		
-		guard case .update(let payload1) = values[1] else {
+		guard case .update(let payload) = values[1] else {
 			XCTFail("second value was not an update")
 			return
 		}
-		XCTAssertEqual(payload1.id, "0")
-		XCTAssertEqual(payload1.name, "Changed Transaction Name")
+		XCTAssertEqual(payload.id, "0")
+		XCTAssertEqual(payload.name, "Changed Transaction Name")
+		
+		guard case .delete(id: let payload) = values[2] else {
+			XCTFail("second value was not an delete")
+			return
+		}
+		XCTAssertEqual(payload, "0")
 		
 	}
 	

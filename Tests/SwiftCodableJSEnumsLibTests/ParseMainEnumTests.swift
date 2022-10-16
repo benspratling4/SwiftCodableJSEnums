@@ -148,5 +148,73 @@ enum Transaction : Decodable, Encodable {
 		XCTAssertTrue(definition.decodable)
 		XCTAssertTrue(definition.encodable)
 	}
+	
+	
+	func testLabeledSingleParameter() {
+		let file = """
+import Foundation
+
+enum Transaction : Decodable, Encodable {
+	case delete(id:String)
+}
+
+"""
+		let parser =  MainEnumParser(mainFile: file)
+	
+		guard let definition = parser.mainEnumDefinition else {
+			XCTFail("didn't parse main enum")
+			return
+		}
+	
+		XCTAssertEqual(definition.mainName, "Transaction")
+		XCTAssertEqual(definition.cases.count, 1)
+		XCTAssertEqual(definition.cases[0].name, "delete")
+		switch definition.cases[0].values {
+		case .one(_):
+			XCTFail("should be multiple")
+		case .multipleNamed(let arguments):
+			XCTAssertEqual(arguments.count, 1)
+			XCTAssertEqual(arguments[0].label, "id")
+			XCTAssertEqual(arguments[0].typeName, "String")
+		}
+		
+	}
+	
+	
+	func testLabeledManyParameters() {
+		let file = """
+import Foundation
+
+enum Transaction : Decodable, Encodable {
+	case add(id:String, text:Foundation.String)
+}
+
+"""
+		let parser =  MainEnumParser(mainFile: file)
+	
+		guard let definition = parser.mainEnumDefinition else {
+			XCTFail("didn't parse main enum")
+			return
+		}
+	
+		XCTAssertEqual(definition.mainName, "Transaction")
+		XCTAssertEqual(definition.cases.count, 1)
+		XCTAssertEqual(definition.cases[0].name, "add")
+		switch definition.cases[0].values {
+		case .one(_):
+			XCTFail("should be multiple")
+		case .multipleNamed(let arguments):
+			XCTAssertEqual(arguments.count, 2)
+			
+			XCTAssertEqual(arguments[0].label, "id")
+			XCTAssertEqual(arguments[0].typeName, "String")
+			
+			XCTAssertEqual(arguments[1].label, "text")
+			XCTAssertEqual(arguments[1].typeName, "Foundation.String")
+		}
+		
+	}
+	
+	
 
 }

@@ -17,7 +17,7 @@ Consider this Swift enum with associated values:
 enum Transaction : Decodable {
 	case add(NewTransaction)
 	case update(TransactionChange)
-	case delete(TransactionDeletion)
+	case delete(id:String)
 }
 struct NewTransaction : Decodable {
 	var name:String
@@ -25,9 +25,6 @@ struct NewTransaction : Decodable {
 struct TransactionChange : Decodable {
 	var id:String
 	var name:String
-}
-struct TransactionDeletion : Decodable {
-	var id:String
 }
 
 ```
@@ -44,16 +41,14 @@ And normally, we push back validation of our values and code paths as far as we 
 		}
 	},
 	{
-		"remove":{
-			"_0": {
-				"id":"5785e96a976f969869b6c86"
-			}
+		"delete":{
+			"id":"5785e96a976f969869b6c86"
 		}
 	},
 ]
 ``` 
 
-which makes all the sense in the world, because you know the types when you begin decoding them, instead of changing the type of the thing based on values of children. (except for that `_0` thing..., and there's a reason for that, it's just 🤦‍♂️)
+which makes all the sense in the world, because you know the types when you begin decoding them, instead of changing the type of the thing based on values of children. (except for that `_0` thing..., and there's a reason for that; it's just 🤦‍♂️)
 
 
 But languages which don't understand types, like JavaScript, have been creating legacy API's that "can't break" that produce data structures like this:
@@ -84,7 +79,15 @@ But using the power of Swift package plugin build tools and Apple's public-sourc
 
 #### Declare your main `enum` with associated values.
 
-Declare it's support for `Codable` (or `Decodable` or `Encodable`).  All your cases must have 1 associated value with no label, and all your associated values must have matching `Codable`, `Decodable`, or `Encodable`  conformances.
+Declare it's support for `Codable` (or `Decodable` or `Encodable`).
+
+For your arguments.  First of all, they all need to be at least as `Decodable` or `Encodable` as your `enum`.
+Second, you have 2 choices for how you want to handle labels.  Swift `enum`s can support any number of labeled or unlabeled arguments in `enum` `case`s.  However, that doesn't make sense here.
+
+ - If you have a small number of arguments, you may want to declare them directly in the `enum`; just make sure they're labeled, like the 'delete` case in the example below.
+ - If you have complex types, wrap them up into another type, and declare one unlabeled argument with that type, such as the `add` or `update` `case`s in the example below.
+ 
+ So what we're _not_ supporting is any unlabeled arguments if there's more than 1 argument.  And that's exactly why Swift was generating the `"_0"` label (`_` meaning "unlabeled", and `0` meaning "first"), which we are _not_ doing. 
 
 `Transaction.swift`
 ```swift
@@ -93,7 +96,7 @@ import MyCustomOtherFramework
 
 public enum Transaction : Codable {
 	case add(NewItem)
-	case delete(OldItemId)
+	case delete(id:String)
 	case update(Values)
 }
 ```
@@ -108,7 +111,7 @@ You can add some other small things in the file, but no other enums!  (If we wan
 This enum will be what we decode or encode for the value of the `type` property.
 So in a new file, all by itself, declare an `enum`, backed by a `String`, and with matching conformances to `Decodable`, `Encodable` or `Codable`.
 Give it cases which match the cases in your original `enum`, but no associated values.
-If the string values differ from the Swift identifiers for the cases, do the ` = "eribekgnj"` thing.
+If the string values differ from the Swift identifiers for the cases, do the `case camelCase = "1nva11d SCREAMING_snake-shishka-BOB"` thing.
 Also name this file the name of the type you create.  Our build tool's got to be able to spot the right file to read the values.
 
 `TransactionType.swift`:
@@ -157,7 +160,6 @@ Add this build tool to your target like you would any other package plugin.  And
 		]
 ),
 ```
-
 
 
 ### Voila!

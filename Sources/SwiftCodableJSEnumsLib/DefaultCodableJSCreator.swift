@@ -41,9 +41,9 @@ public struct DefaultCodableJSCreator {
 				finalOutput += "public "
 			}
 			finalOutput += "init(from decoder:Decoder)throws {\n\t\tlet typer = try decoder.singleValueContainer().decode(JSCodableTypeContainer.self)\n\t\tswitch typer." + spec.typePropertyName + " {\n"
-			for caseSpec in spec.cases {
-				finalOutput += "\t\t\tcase ." + caseSpec.name + ":\n\t\t\t\tself = ." + caseSpec.name + "(try decoder.singleValueContainer().decode(" + caseSpec.associatedValueName + ".self))\n"
-			}
+			finalOutput += spec.cases
+				.map({ $0.decodingCaseCode })
+				.joined()
 			finalOutput += "\t\t}\n\t}\n\n"
 		}
 		
@@ -54,9 +54,7 @@ public struct DefaultCodableJSCreator {
 				finalOutput += "public "
 			}
 			finalOutput += "func encode(to encoder: Encoder) throws {\n\t\tvar container = encoder.singleValueContainer()\n\t\t\tswitch self {\n"
-			for caseSpec in spec.cases {
-				finalOutput += "\t\t\tcase ." + caseSpec.name + "(let value):\n\t\t\t\ttry container.encode(value)\n"
-			}
+			finalOutput += spec.cases.map({ $0.encodingCaseCode }).joined()
 			finalOutput += "\t\t}\n"
 			finalOutput += "\t\tvar subContainer = encoder.container(keyedBy: JSCodableCodingKey.self)\n\t\ttry subContainer.encode(self.type, forKey: .init(stringValue: \"" + spec.typePropertyName + "\")!)\n\t"
 			finalOutput += "}\n"
@@ -78,6 +76,10 @@ public struct DefaultCodableJSCreator {
 			//we have to add it not inside the extension because the compiler thinks it's the coding key for the actual enum
 			finalOutput += "\n\n\tprivate struct JSCodableCodingKey : CodingKey {\n\t\tvar stringValue: String\n\t\tinit?(stringValue: String) {\n\t\t\tself.stringValue = stringValue\n\t\t\tintValue = nil\n\t\t}\n\t\tvar intValue: Int?\n\t\tinit?(intValue: Int) {\n\t\t\tself.intValue = intValue\n\t\t\tself.stringValue = \"\\(intValue)\"\n\t\t}\n\t}\n"
 		}
+		
+		finalOutput += spec.cases
+			.compactMap({ $0.additionalTypeDefinition(decodable: spec.createDecode, encodable: spec.createEncode) })
+			.joined()
 		
 		return finalOutput
 	}
@@ -121,9 +123,99 @@ public struct EnumCoderSpec {
 
 public struct CaseSpec {
 	public var name:String
-	public var associatedValueName:String
+	public var values:CaseValues
 	public init(name: String, associatedValueName: String) {
 		self.name = name
-		self.associatedValueName = associatedValueName
+		self.values = CaseValues.one(associatedValueName)
+	}
+	public init(name: String, values: CaseValues) {
+		self.name = name
+		self.values = values
+	}
+	
+	//for testing only, provides non-nil value only for values case.one
+	var associatedValueName:String? {
+		switch values {
+		case .one(let string):
+			return string
+		default:
+			return nil
+		}
+	}
+	
+	var decodingCaseCode:String {
+		switch values {
+		case .one(let typeName):
+			return  "\t\t\tcase ." + name + ":\n\t\t\t\tself = ." + name + "(try decoder.singleValueContainer().decode(" + typeName + ".self))\n"
+			
+		case .multipleNamed(let arguments):
+			guard let typeName = additionalTypeName else {
+				return ""	//can't hit here?
+			}
+			var finalString = "\t\t\tcase ." + name + ":\n"
+			finalString += "\t\t\t\tlet value = try decoder.singleValueContainer().decode(" + typeName + ".self)\n"
+			finalString += "\t\t\t\tself = ." + name + "(" + arguments.map({ $0.label + ":value." + $0.label }).joined(separator:", ") + ")\n"
+			return finalString
+		}
+	}
+	
+	var encodingCaseCode:String {
+		switch values {
+		case .one(_):
+			return "\t\t\tcase ." + name + "(let value):\n\t\t\t\ttry container.encode(value)\n"
+		case .multipleNamed(let arguments):
+			guard let typeName = additionalTypeName else {
+				return ""	//can't hit here?
+			}
+			var finalString = "\t\t\tcase ." + name + "("
+			finalString += arguments.map({ $0.label + ":let " + $0.label + "Value"  }).joined(separator: ", ") + "):\n"
+			finalString += "\t\t\t\tlet payload = " + typeName + "(" + arguments.map({ $0.label + ":" + $0.label + "Value"  }).joined(separator: ", ") + ")\n"
+			finalString += "\t\t\t\ttry container.encode(payload)\n"
+			
+			return finalString
+		}
+	}
+	
+	//if we have labeled arguments, this type defines a struct which wraps them
+	func additionalTypeDefinition(decodable:Bool, encodable:Bool)->String? {
+		guard case .multipleNamed(let array) = values
+				,let typename = additionalTypeName
+		else {
+			return nil
+		}
+		var finalString:String = "private struct " + typename + " : "
+		let inheritance = [
+			decodable ? "Decodable" : nil,
+			encodable ? "Encodable" : nil
+		]
+			.compactMap({ $0 })
+			.joined(separator: ", ")
+		finalString += inheritance
+		finalString += " {\n"
+		finalString += array.map({ "\tvar " + $0.label + ":" + $0.typeName }).joined(separator: "\n")
+		finalString += "\n}\n"
+		return finalString
+	}
+	
+	var additionalTypeName:String? {
+		guard case .multipleNamed(_) = values else {
+			return nil
+		}
+		return "Case" + name.capitalized + "AssociatedValuesContainer"
+	}
+	
+}
+
+public enum CaseValues {
+	case one(String)	//value is type name
+	case multipleNamed([CaseValue])
+}
+
+public struct CaseValue {
+	public var label:String
+	public var typeName:String
+	public init(label: String, typeName: String) {
+		self.label = label
+		self.typeName = typeName
 	}
 }
