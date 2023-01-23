@@ -56,7 +56,7 @@ public struct DefaultCodableJSCreator {
 			finalOutput += "func encode(to encoder: Encoder) throws {\n\t\tvar container = encoder.singleValueContainer()\n\t\t\tswitch self {\n"
 			finalOutput += spec.cases.map({ $0.encodingCaseCode }).joined()
 			finalOutput += "\t\t}\n"
-			finalOutput += "\t\tvar subContainer = encoder.container(keyedBy: JSCodableCodingKey.self)\n\t\ttry subContainer.encode(self.type, forKey: .init(stringValue: \"" + spec.typePropertyName + "\")!)\n\t"
+			finalOutput += "\t\tvar subContainer = encoder.container(keyedBy: JSCodableCodingKey.self)\n\t\ttry subContainer.encode(self." + spec.typePropertyName + ", forKey: .init(stringValue: \"" + spec.typePropertyName + "\")!)\n\t"
 			finalOutput += "}\n"
 		}
 		
