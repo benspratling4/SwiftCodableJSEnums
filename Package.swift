@@ -7,7 +7,8 @@ import PackageDescription
 let package = Package(
     name: "SwiftCodableJSEnums",
     products: [
-		.plugin(name: "SwiftCodableJSEnums", targets: ["SwiftCodableJSEnums"])
+		.plugin(name: "SwiftCodableJSEnums", targets: ["SwiftCodableJSEnums"]),
+		.executable(name: "SwiftCodableJSEnumsExec", targets:["SwiftCodableJSEnumsExec"])
     ],
     dependencies: [
 		.package(url: "https://github.com/apple/swift-syntax.git", exact: "0.50700.1"),
