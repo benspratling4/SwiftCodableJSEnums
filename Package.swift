@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.8
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -6,12 +6,21 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftCodableJSEnums",
+	platforms: [
+		//copied from swift-syntax
+		.macOS(.v10_15),
+		.iOS(.v13),
+		.tvOS(.v13),
+		.watchOS(.v6),
+		.macCatalyst(.v13),
+	],
     products: [
 		.plugin(name: "SwiftCodableJSEnums", targets: ["SwiftCodableJSEnums"]),
-		.executable(name: "SwiftCodableJSEnumsExec", targets:["SwiftCodableJSEnumsExec"])
+		.executable(name: "SwiftCodableJSEnumsExec", targets:["SwiftCodableJSEnumsExec"]),
+		.library(name: "ExampleProject", targets: ["ExampleProject"]),
     ],
     dependencies: [
-		.package(url: "https://github.com/apple/swift-syntax.git", exact: "0.50700.1"),
+		.package(url: "https://github.com/apple/swift-syntax.git", exact: "508.0.0"),
     ],
     targets: [
 		//The main product of this pakage, a plugin which creates alternate default decodable implementations
@@ -51,9 +60,9 @@ let package = Package(
 					.product(name: "SwiftSyntaxParser", package: "swift-syntax"),
 				]
 						  //https://www.polpiella.dev/embedding-a-dylib-in-a-swift-package/
-						  ,linkerSettings: [
-							.unsafeFlags(["-rpath","/${BUILD_DIR}/${CONFIGURATION}/"])
-						  ]
+//						  ,linkerSettings: [
+//							.unsafeFlags(["-rpath","/${BUILD_DIR}/${CONFIGURATION}/"])
+//						  ]
 						 ),
 		
 		//Unit Tests for the library

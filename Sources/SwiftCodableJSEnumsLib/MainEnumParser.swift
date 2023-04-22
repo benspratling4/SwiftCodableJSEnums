@@ -18,6 +18,7 @@ public class MainEnumParser : SyntaxVisitor {
 	
 	public init(mainFile:String) {
 		self.mainFile = mainFile
+		super.init(viewMode: .fixedUp)
 	}
 	
 	public var mainEnumDefinition:MainEnumSpec? {

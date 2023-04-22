@@ -14,6 +14,7 @@ public class TypeEnumParser : SyntaxVisitor {
 	
 	public init(typeFile:String) {
 		self.typeFile = typeFile
+		super.init(viewMode: .fixedUp)
 	}
 	
 	public var typeEnumDefinition:TypeEnumSpec? {
